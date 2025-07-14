@@ -16,13 +16,13 @@ diastolique = st.number_input("Tension diastolique (mmHg)", value=70, min_value=
 bpm = st.number_input("Battements par minute (BPM)", value=80, min_value=30, max_value=150)
 
 # État émotionnel
+st.write("Comment vous sentez-vous aujourd'hui ?")
 normale = st.checkbox("🙂 Normale")
 joyeuse = st.checkbox("😊 Joyeuse")
 anxieuse = st.checkbox("😰 Anxieuse")
 stressee = st.checkbox("😖 Stressée")
 fatiguee = st.checkbox("😴 Fatiguée")
 changement_traitement = st.checkbox("💊 Changement de traitement")
-
 
 # Historique
 history_file = "historique.csv"
@@ -32,25 +32,24 @@ def lire_historique():
         return pd.read_csv(history_file, parse_dates=["Date"])
     else:
         return pd.DataFrame(columns=[
-    "Date", "Systolique", "Diastolique", "BPM",
-    "Normale", "Joyeuse", "Anxieuse", "Stressée", "Fatiguée", "Changement traitement"
-])
+            "Date", "Systolique", "Diastolique", "BPM",
+            "Normale", "Joyeuse", "Anxieuse", "Stressée", "Fatiguée", "Changement traitement"
+        ])
 
-def sauvegarder_mesure(date, sys, dia, bpm, joy, anx, stress, fat, chang):
+def sauvegarder_mesure(date, sys, dia, bpm, norm, joy, anx, stress, fat, chang):
     df = lire_historique()
     nouvelle_ligne = {
-    "Date": date,
-    "Systolique": sys,
-    "Diastolique": dia,
-    "BPM": bpm,
-    "Normale": normale,
-    "Joyeuse": joy,
-    "Anxieuse": anx,
-    "Stressée": stress,
-    "Fatiguée": fat,
-    "Changement traitement": chang
-}
-
+        "Date": date,
+        "Systolique": sys,
+        "Diastolique": dia,
+        "BPM": bpm,
+        "Normale": norm,
+        "Joyeuse": joy,
+        "Anxieuse": anx,
+        "Stressée": stress,
+        "Fatiguée": fat,
+        "Changement traitement": chang
+    }
     nouvelle_df = pd.DataFrame([nouvelle_ligne])
     df = pd.concat([df, nouvelle_df], ignore_index=True)
     df.to_csv(history_file, index=False)
@@ -59,18 +58,18 @@ def sauvegarder_mesure(date, sys, dia, bpm, joy, anx, stress, fat, chang):
 if st.button("Analyser"):
     anomalies = []
 
-if not (120 <= systolique <= 139):
-    anomalies.append("Systolique hors de la plage normale (120-139 mmHg)")
-if not (70 <= diastolique <= 89):
-    anomalies.append("Diastolique hors de la plage normale (70-89 mmHg)")
- 
+    if not (120 <= systolique <= 139):
+        anomalies.append("Systolique hors de la plage normale (120-139 mmHg)")
+    if not (70 <= diastolique <= 89):
+        anomalies.append("Diastolique hors de la plage normale (70-89 mmHg)")
+
     if bpm < 65:
         anomalies.append("Rythme cardiaque trop lent")
     elif bpm > 100:
         anomalies.append("Rythme cardiaque trop rapide")
 
     if anomalies:
-        st.error("⚠️ DANGER : " + ", ".join(anomalies))
+        st.error("⚠️ Attention : " + ", ".join(anomalies))
     else:
         st.success("🎉 Super maman ! Toutes les valeurs sont normales.")
 
@@ -82,7 +81,7 @@ if not (70 <= diastolique <= 89):
 
     # Sauvegarde
     now = datetime.now()
-    sauvegarder_mesure(now, systolique, diastolique, bpm, joyeuse, anxieuse, stressee, fatiguee, changement_traitement)
+    sauvegarder_mesure(now, systolique, diastolique, bpm, normale, joyeuse, anxieuse, stressee, fatiguee, changement_traitement)
 
 # Affichage historique
 df = lire_historique()
@@ -102,10 +101,12 @@ if not df.empty:
     ax.legend()
     st.pyplot(fig)
 
-    # Affichage des émotions
-    st.write("### État émotionnel relevé")
-    st.dataframe(df[["Date", "Normale", "Joyeuse", "Anxieuse", "Stressée", "Fatiguée", "Changement traitement"]])
+    # Affichage des émotions avec vérification des colonnes
+    colonnes_emotions = ["Date", "Normale", "Joyeuse", "Anxieuse", "Stressée", "Fatiguée", "Changement traitement"]
+    colonnes_existantes = [col for col in colonnes_emotions if col in df.columns]
 
+    st.write("### État émotionnel relevé")
+    st.dataframe(df[colonnes_existantes])
 else:
     st.info("Aucun historique encore. Entrez une mesure pour commencer.")
 
@@ -125,5 +126,4 @@ if st.button("Envoyer l'historique par e-mail"):
         st.error("Aucun fichier d’historique à envoyer.")
     else:
         envoyer_email(email_medecin, history_file)
-
-
+  
