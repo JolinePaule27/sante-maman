@@ -16,12 +16,13 @@ diastolique = st.number_input("Tension diastolique (mmHg)", value=70, min_value=
 bpm = st.number_input("Battements par minute (BPM)", value=80, min_value=30, max_value=150)
 
 # État émotionnel
-st.write("Comment vous sentez-vous aujourd'hui ?")
+normale = st.checkbox("🙂 Normale")
 joyeuse = st.checkbox("😊 Joyeuse")
 anxieuse = st.checkbox("😰 Anxieuse")
 stressee = st.checkbox("😖 Stressée")
 fatiguee = st.checkbox("😴 Fatiguée")
 changement_traitement = st.checkbox("💊 Changement de traitement")
+
 
 # Historique
 history_file = "historique.csv"
@@ -31,23 +32,25 @@ def lire_historique():
         return pd.read_csv(history_file, parse_dates=["Date"])
     else:
         return pd.DataFrame(columns=[
-            "Date", "Systolique", "Diastolique", "BPM",
-            "Joyeuse", "Anxieuse", "Stressée", "Fatiguée", "Changement traitement"
-        ])
+    "Date", "Systolique", "Diastolique", "BPM",
+    "Normale", "Joyeuse", "Anxieuse", "Stressée", "Fatiguée", "Changement traitement"
+])
 
 def sauvegarder_mesure(date, sys, dia, bpm, joy, anx, stress, fat, chang):
     df = lire_historique()
     nouvelle_ligne = {
-        "Date": date,
-        "Systolique": sys,
-        "Diastolique": dia,
-        "BPM": bpm,
-        "Joyeuse": joy,
-        "Anxieuse": anx,
-        "Stressée": stress,
-        "Fatiguée": fat,
-        "Changement traitement": chang
-    }
+    "Date": date,
+    "Systolique": sys,
+    "Diastolique": dia,
+    "BPM": bpm,
+    "Normale": normale,
+    "Joyeuse": joy,
+    "Anxieuse": anx,
+    "Stressée": stress,
+    "Fatiguée": fat,
+    "Changement traitement": chang
+}
+
     nouvelle_df = pd.DataFrame([nouvelle_ligne])
     df = pd.concat([df, nouvelle_df], ignore_index=True)
     df.to_csv(history_file, index=False)
@@ -56,10 +59,11 @@ def sauvegarder_mesure(date, sys, dia, bpm, joy, anx, stress, fat, chang):
 if st.button("Analyser"):
     anomalies = []
 
-    if systolique > 120:
-        anomalies.append("Systolique trop haute")
-    if diastolique > 71:
-        anomalies.append("Diastolique trop haute")
+if not (120 <= systolique <= 139):
+    anomalies.append("Systolique hors de la plage normale (120-139 mmHg)")
+if not (70 <= diastolique <= 89):
+    anomalies.append("Diastolique hors de la plage normale (70-89 mmHg)")
+ 
     if bpm < 65:
         anomalies.append("Rythme cardiaque trop lent")
     elif bpm > 100:
@@ -100,7 +104,8 @@ if not df.empty:
 
     # Affichage des émotions
     st.write("### État émotionnel relevé")
-    st.dataframe(df[["Date", "Joyeuse", "Anxieuse", "Stressée", "Fatiguée", "Changement traitement"]])
+    st.dataframe(df[["Date", "Normale", "Joyeuse", "Anxieuse", "Stressée", "Fatiguée", "Changement traitement"]])
+
 else:
     st.info("Aucun historique encore. Entrez une mesure pour commencer.")
 
@@ -120,3 +125,5 @@ if st.button("Envoyer l'historique par e-mail"):
         st.error("Aucun fichier d’historique à envoyer.")
     else:
         envoyer_email(email_medecin, history_file)
+
+
